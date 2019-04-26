@@ -180,7 +180,7 @@ public abstract class CellHandlers extends IGameLife {
 
         for (int i = 0; i < 3; i++) {
             if (rule.rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
-                int index = i+((i+1)*2);
+                int index = i+((i+1)*2); //перерасчёт индексов
 
                 fromLocalToGlobal(currentThreadRI.cellTry, index, x, y);
                 if (!next.contains(currentThreadRI.cellTry)) {
@@ -356,7 +356,7 @@ public abstract class CellHandlers extends IGameLife {
 
         for (int i = 0; i < 6; i++) {
             if (rule.rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
-                int index = i+(Math.floorDiv(i, 2)+1);
+                int index = i+(Math.floorDiv(i, 2)+1);//перерасчёт индексов
 
                 fromLocalToGlobal(currentThreadRI.cellTry, index, x, y);
                 if (!next.contains(currentThreadRI.cellTry)) {

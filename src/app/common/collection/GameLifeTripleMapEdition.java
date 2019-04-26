@@ -24,12 +24,12 @@ public class GameLifeTripleMapEdition extends CellHandlers {
     private int                 currentContainerIndex;
 
     /*
-     * currentContainerIndex+0                                  - current   map того что на экране
-     * (currentContainerIndex+NEXT_OFFSET)%CONTAINERS_COUNT     - next      map куда идёт запись будующего поколения
-     * (currentContainerIndex+HEAP_OFFSET)%CONTAINERS_COUNT     - heap      map хранящий неактуальные клетки используется
+     * currentContainerIndex+0                                  - current   то что на экране
+     * (currentContainerIndex+NEXT_OFFSET)%CONTAINERS_COUNT     - next      туда идёт запись будущего поколения
+     * (currentContainerIndex+HEAP_OFFSET)%CONTAINERS_COUNT     - heap      хранит неактуальные клетки используется
      *                                                                      для переиспользования
      *
-     * каждый map крутится в цикле current -> heap -> next -> current
+     * каждый container крутится в цикле current -> heap -> next -> current
      *
      * index     0       1       2
      * frame1    current next    heap
@@ -69,9 +69,7 @@ public class GameLifeTripleMapEdition extends CellHandlers {
         Iterator<Cell> heap = getHeapMap().iterator();
         next.clear();
 
-        current.forEach(c -> {
-            calcSingleCell(c, current, next, heap);
-        });
+        calcFrame(current.stream(), current, next, heap);
     }
 
     @Override

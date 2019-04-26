@@ -20,12 +20,12 @@ public class GameLifeCollectionEdition extends CellHandlers {
     private int                         currentContainerIndex;
 
     /*
-    * currentContainerIndex+0                               - current   map того что на экране
-    * (currentContainerIndex+NEXT_OFFSET)%CONTAINERS_COUNT  - next      map куда идёт запись будующего поколения
+    * currentContainerIndex+0                               - current   то что на экране
+    * (currentContainerIndex+NEXT_OFFSET)%CONTAINERS_COUNT  - next      туда идёт запись будущего поколения
     *
-    * каждый map имеет heap в котором храняться клетки готовые для переиспользования
+    * каждый container имеет heap в котором храняться клетки готовые для переиспользования
     * heap при необходимости создаёт и добавляет в себя клетки при вызове iterator().next()
-    * индексу map соответствует heap
+    * индексу containerа соответствует heap
     */
 
     private Future                      tasks[];
@@ -64,9 +64,7 @@ public class GameLifeCollectionEdition extends CellHandlers {
         Iterator<Cell> heap = getNextHeap().iterator();
         next.clear();
 
-        current.forEach(c -> {
-            calcSingleCell(c, current, next, heap);
-        });
+        calcFrame(current.stream(), current, next, heap);
     }
 
     @Override
