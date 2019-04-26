@@ -3,6 +3,7 @@ package app;
 import app.common.IGameLife;
 import app.common.Cell;
 import app.common.collection.*;
+import app.common.hashlife.Node;
 import app.figure.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -81,7 +82,24 @@ public class Main {
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, FigureException {
-        init();
+        short live = 1;
+        short dead = 0;
+
+        Node node = new Node((short count, short state)-> {
+            if (count == 3) {
+                return live;
+            }
+            else if (count == 2 && state > 0) {
+                return live;
+            }
+            else {
+                return dead;
+            }
+        }, 3);
+
+        System.out.println("end");
+
+        /*init();
         short live = 1;
         short dead = 0;
 
@@ -131,6 +149,6 @@ public class Main {
             StdDraw.textLeft(20, 20, time);
             StdDraw.textLeft(20, 40, fps);
             StdDraw.show();
-        }
+        }*/
     }
 }

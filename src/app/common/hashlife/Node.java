@@ -9,7 +9,8 @@ public class Node {
     public Node rightLower;
     public Node leftLower;
 
-    public int level;
+    private int level;
+    private short alive;
 
     private IRule rule;
 
@@ -23,6 +24,7 @@ public class Node {
 
         if (level == 0) {
             this.rule = rule;
+            this.alive = 0;
             return;
         }
 
@@ -43,11 +45,11 @@ public class Node {
         leftLower = lL;
     }
 
-    public Node expandUniverse() {
-
-    }
-
-    public Node nextStep() {
-
-    }
+//    public Node expandUniverse() {
+//
+//    }
+//
+//    public Node nextStep() {
+//
+//    }
 }
