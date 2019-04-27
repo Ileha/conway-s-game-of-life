@@ -95,9 +95,11 @@ public class Main {
             else {
                 return dead;
             }
-        }, 3);
+        }, 2);
 
-        System.out.println("end");
+        node.expandUniverse();
+
+        System.out.println(node);
 
         /*init();
         short live = 1;
