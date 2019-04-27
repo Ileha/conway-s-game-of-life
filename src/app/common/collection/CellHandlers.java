@@ -6,14 +6,14 @@ import app.common.IRule;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
 /*
 * Определяет логику обработки клеток
 */
-public abstract class CellHandlers extends IGameLife {
+public abstract class CellHandlers<T> extends IGameLife {
     /*
      * currentThreadRI.counts[] количество живых клеток вокруг каждой из 9, индекс это номер клетки
      * currentThreadRI.states[] массив показывающий какие клетки живые, а какие нет индекс это номер клетки
@@ -36,9 +36,9 @@ public abstract class CellHandlers extends IGameLife {
     * сортирует клетки
     */
     protected void calcFrame(Stream<Cell> stream,
-                            Set<Cell> current,
-                            Set<Cell> next,
-                            Iterator<Cell> heap)
+                             T current,
+                             T next,
+                             Iterator<Cell> heap)
     {
         RuleInfo currentThreadRI = ruleInfoByThread.get();
         currentThreadRI.resetLastValues();
@@ -69,6 +69,44 @@ public abstract class CellHandlers extends IGameLife {
         );
     }
 
+
+    protected void calcSortedFrame(List<Cell> array,
+                                   T current,
+                                   T next,
+                                   Iterator<Cell> heap)
+    {
+        RuleInfo currentThreadRI = ruleInfoByThread.get();
+        currentThreadRI.resetLastValues();
+
+        for (int i = 0; i < array.size(); i++) {
+            Cell cell = array.get(i);
+
+            int deltaY = cell.getY() - currentThreadRI.ly;
+
+            if (deltaY == 0) {
+                int deltaX = cell.getX() - currentThreadRI.lx;
+                if (deltaX == 1) {
+                    calcCellStep1(cell, current, next, heap);
+                } else if (deltaX == 2) {
+                    calcCellStep2(cell, current, next, heap);
+                } else {
+                    calcSingleCell(cell, current, next, heap);
+                }
+            } else {
+                calcSingleCell(cell, current, next, heap);
+            }
+
+            currentThreadRI.lx = cell.getX();
+            currentThreadRI.ly = cell.getY();
+        }
+    }
+
+    /*
+    * Методы необходимые для отвязки обработки клеток от конкретного типа коллекций
+    */
+    protected abstract boolean contains(T collection, Cell cell);
+    protected abstract void add(T collection, Cell cell);
+
     /*
      * row 0   0  0 0
      * row 1   0 с0 0
@@ -81,9 +119,9 @@ public abstract class CellHandlers extends IGameLife {
      * c текущая живая клетка
      */
     protected void calcCellStep1(Cell cell,
-                                  Set<Cell> current,
-                                  Set<Cell> next,
-                                  Iterator<Cell> heap)
+                                 T current,
+                                 T next,
+                                 Iterator<Cell> heap)
     {
         RuleInfo currentThreadRI = ruleInfoByThread.get();
         Arrays.fill(currentThreadRI.counts, 0, 3, (short) 1);
@@ -94,33 +132,33 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 0
         currentThreadRI.cellTry.set(x, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
         }
         //end row 0
 
         //row 1
         currentThreadRI.cellTry.set(x, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//0 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//0 enemy
             currentThreadRI.states[0] = 1;
 
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
         }
@@ -130,14 +168,14 @@ public abstract class CellHandlers extends IGameLife {
         //пропусакем x, y т.к. уже учли её
 
         currentThreadRI.cellTry.set(x+1, y);
-        if (current.contains(currentThreadRI.cellTry)) {//1 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//1 enemy
             currentThreadRI.states[1] = 1;
 
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[2] += 1;
@@ -146,18 +184,18 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 3
         currentThreadRI.cellTry.set(x, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//2 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//2 enemy
             currentThreadRI.states[2] = 1;
 
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[2] += 1;
         }
@@ -165,15 +203,15 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 4
         currentThreadRI.cellTry.set(x, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
         }
         //end row 4
@@ -183,7 +221,7 @@ public abstract class CellHandlers extends IGameLife {
                 int index = i+((i+1)*2); //перерасчёт индексов
 
                 fromLocalToGlobal(currentThreadRI.cellTry, index, x, y);
-                if (!next.contains(currentThreadRI.cellTry)) {
+                if (!contains(next, currentThreadRI.cellTry)) {
                     Cell forAdd = null;
                     if (heap.hasNext()) {
                         forAdd = heap.next();
@@ -192,7 +230,7 @@ public abstract class CellHandlers extends IGameLife {
                         forAdd = new Cell();
                     }
                     forAdd.set(currentThreadRI.cellTry);
-                    next.add(forAdd);
+                    add(next, forAdd);
                 }
             }
         }
@@ -210,8 +248,8 @@ public abstract class CellHandlers extends IGameLife {
      * c2 текущая живая клетка
      */
     protected void calcCellStep2(Cell cell,
-                                 Set<Cell> current,
-                                 Set<Cell> next,
+                                 T current,
+                                 T next,
                                  Iterator<Cell> heap)
     {
         RuleInfo currentThreadRI = ruleInfoByThread.get();
@@ -225,21 +263,21 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 0
         currentThreadRI.cellTry.set(x-1, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
         }
         currentThreadRI.cellTry.set(x, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
         }
         //end row 0
@@ -247,12 +285,12 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 1
         currentThreadRI.cellTry.set(x-1, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//0 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//0 enemy
             currentThreadRI.states[0] = 1;
 
             currentThreadRI.counts[1] += 1;
@@ -260,7 +298,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[3] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//1 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//1 enemy
             currentThreadRI.states[1] = 1;
 
             currentThreadRI.counts[0] += 1;
@@ -268,7 +306,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[3] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[3] += 1;
         }
@@ -277,7 +315,7 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 2
         currentThreadRI.cellTry.set(x-1, y);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[2] += 1;
             currentThreadRI.counts[4] += 1;
@@ -285,7 +323,7 @@ public abstract class CellHandlers extends IGameLife {
 
         //пропускаем x, y т.к. уже её учли
         currentThreadRI.cellTry.set(x+1, y);
-        if (current.contains(currentThreadRI.cellTry)) {//3 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//3 enemy
             currentThreadRI.states[3] = 1;
 
             currentThreadRI.counts[1] += 1;
@@ -295,7 +333,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[5] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[3] += 1;
             currentThreadRI.counts[5] += 1;
@@ -305,12 +343,12 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 3
         currentThreadRI.cellTry.set(x-1, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
             currentThreadRI.counts[4] += 1;
         }
         currentThreadRI.cellTry.set(x, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//4 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//4 enemy
             currentThreadRI.states[4] = 1;
 
             currentThreadRI.counts[2] += 1;
@@ -318,7 +356,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[5] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//5 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//5 enemy
             currentThreadRI.states[5] = 1;
 
             currentThreadRI.counts[3] += 1;
@@ -326,7 +364,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[4] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[3] += 1;
             currentThreadRI.counts[5] += 1;
         }
@@ -335,21 +373,21 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 4
         currentThreadRI.cellTry.set(x-1, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[4] += 1;
         }
         currentThreadRI.cellTry.set(x, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[4] += 1;
             currentThreadRI.counts[5] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[5] += 1;
             currentThreadRI.counts[4] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[5] += 1;
         }
         //end row 4
@@ -359,7 +397,7 @@ public abstract class CellHandlers extends IGameLife {
                 int index = i+(Math.floorDiv(i, 2)+1);//перерасчёт индексов
 
                 fromLocalToGlobal(currentThreadRI.cellTry, index, x, y);
-                if (!next.contains(currentThreadRI.cellTry)) {
+                if (!contains(next, currentThreadRI.cellTry)) {
                     Cell forAdd = null;
                     if (heap.hasNext()) {
                         forAdd = heap.next();
@@ -368,7 +406,7 @@ public abstract class CellHandlers extends IGameLife {
                         forAdd = new Cell();
                     }
                     forAdd.set(currentThreadRI.cellTry);
-                    next.add(forAdd);
+                    add(next, forAdd);
                 }
             }
         }
@@ -387,8 +425,8 @@ public abstract class CellHandlers extends IGameLife {
      * c4 текущая живая клетка
      */
     protected void calcSingleCell(Cell cell,
-                                  Set<Cell> current,
-                                  Set<Cell> next,
+                                  T current,
+                                  T next,
                                   Iterator<Cell> heap)
     {
         RuleInfo currentThreadRI = ruleInfoByThread.get();
@@ -403,39 +441,39 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 0
         currentThreadRI.cellTry.set(x-2, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
         }
         currentThreadRI.cellTry.set(x-1, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
         }
         currentThreadRI.cellTry.set(x, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[1] += 1;
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
         }
         //end row 0
 
         //row 1
         currentThreadRI.cellTry.set(x-2, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[3] += 1;
         }
         currentThreadRI.cellTry.set(x-1, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//0 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//0 enemy
             currentThreadRI.states[0] = 1;
 
             currentThreadRI.counts[1] += 1;
@@ -443,7 +481,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[3] += 1;
         }
         currentThreadRI.cellTry.set(x, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//1 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//1 enemy
             currentThreadRI.states[1] = 1;
 
             currentThreadRI.counts[0] += 1;
@@ -453,7 +491,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[2] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {//2 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//2 enemy
             currentThreadRI.states[2] = 1;
 
             currentThreadRI.counts[1] += 1;
@@ -461,7 +499,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[5] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y-1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
             currentThreadRI.counts[5] += 1;
         }
@@ -469,13 +507,13 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 2
         currentThreadRI.cellTry.set(x-2, y);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[0] += 1;
             currentThreadRI.counts[3] += 1;
             currentThreadRI.counts[6] += 1;
         }
         currentThreadRI.cellTry.set(x-1, y);
-        if (current.contains(currentThreadRI.cellTry)) {//3 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//3 enemy
             currentThreadRI.states[3] = 1;
 
             currentThreadRI.counts[0] += 1;
@@ -487,7 +525,7 @@ public abstract class CellHandlers extends IGameLife {
 
         //пропускаем 4 клетку т.к. зарание исвестно, что она живая
         currentThreadRI.cellTry.set(x+1, y);
-        if (current.contains(currentThreadRI.cellTry)) {//5 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//5 enemy
             currentThreadRI.states[5] = 1;
 
             currentThreadRI.counts[2] += 1;
@@ -497,7 +535,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[8] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[2] += 1;
             currentThreadRI.counts[5] += 1;
             currentThreadRI.counts[8] += 1;
@@ -506,12 +544,12 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 3
         currentThreadRI.cellTry.set(x-2, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[3] += 1;
             currentThreadRI.counts[6] += 1;
         }
         currentThreadRI.cellTry.set(x-1, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//6 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//6 enemy
             currentThreadRI.states[6] = 1;
 
             currentThreadRI.counts[3] += 1;
@@ -519,7 +557,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[7] += 1;
         }
         currentThreadRI.cellTry.set(x, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//7 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//7 enemy
             currentThreadRI.states[7] = 1;
 
             currentThreadRI.counts[6] += 1;
@@ -529,7 +567,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[8] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {//8 enemy
+        if (contains(current, currentThreadRI.cellTry)) {//8 enemy
             currentThreadRI.states[8] = 1;
 
             currentThreadRI.counts[7] += 1;
@@ -537,7 +575,7 @@ public abstract class CellHandlers extends IGameLife {
             currentThreadRI.counts[5] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+1);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[5] += 1;
             currentThreadRI.counts[8] += 1;
         }
@@ -545,45 +583,43 @@ public abstract class CellHandlers extends IGameLife {
 
         //row 4
         currentThreadRI.cellTry.set(x-2, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[6] += 1;
         }
         currentThreadRI.cellTry.set(x-1, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[6] += 1;
             currentThreadRI.counts[7] += 1;
         }
         currentThreadRI.cellTry.set(x, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[6] += 1;
             currentThreadRI.counts[7] += 1;
             currentThreadRI.counts[8] += 1;
         }
         currentThreadRI.cellTry.set(x+1, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[7] += 1;
             currentThreadRI.counts[8] += 1;
         }
         currentThreadRI.cellTry.set(x+2, y+2);
-        if (current.contains(currentThreadRI.cellTry)) {
+        if (contains(current, currentThreadRI.cellTry)) {
             currentThreadRI.counts[8] += 1;
         }
         //end row 4
         for (int i = 0; i < currentThreadRI.states.length; i++) {
             if (rule.rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
                 fromLocalToGlobal(currentThreadRI.cellTry, i, x, y);
-                if (!next.contains(currentThreadRI.cellTry)) {
+                if (!contains(next, currentThreadRI.cellTry)) {
                     Cell forAdd = null;
                     if (heap.hasNext()) {
                         forAdd = heap.next();
-//                        currentThreadRI.reused++;
                     }
                     else {
                         forAdd = new Cell();
-//                        currentThreadRI.create++;
                     }
                     forAdd.set(currentThreadRI.cellTry);
-                    next.add(forAdd);
+                    add(next, forAdd);
                 }
             }
         }

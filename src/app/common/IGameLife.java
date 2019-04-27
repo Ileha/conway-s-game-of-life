@@ -17,6 +17,11 @@ public abstract class IGameLife {
     public abstract void change();
 
     /*
+    * Вызывается перед вычислением каждого кадра первым
+    */
+    public void preCalculation() {}
+
+    /*
     * вычисляют следующий кадр
     * вычисленный кадр можно получить вызовом getCurrent(), пред этим вызвав метод change()
     */

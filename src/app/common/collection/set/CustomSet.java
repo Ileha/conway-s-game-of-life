@@ -1,4 +1,4 @@
-package app.common.collection;
+package app.common.collection.set;
 
 import java.util.*;
 

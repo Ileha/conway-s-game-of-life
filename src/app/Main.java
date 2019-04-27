@@ -2,12 +2,10 @@ package app;
 
 import app.common.IGameLife;
 import app.common.Cell;
-import app.common.collection.*;
+import app.common.collection.list.GameLifeListEdition;
 import app.figure.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.*;
 
 import app.figure.Exceptions.FigureException;
@@ -85,7 +83,7 @@ public class Main {
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeCollectionEdition(1200, 700, (short count, short state)-> {
+        data = new GameLifeListEdition(1200, 700, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -108,8 +106,10 @@ public class Main {
         while (true) {
             long tStart = System.currentTimeMillis();
 
+            data.preCalculation();
+
             Future[] future = data.calcNextStepAsync();
-            //data.calcSingleCell();
+//            data.calcNextStep();
 
             checkKeys();
             draw();

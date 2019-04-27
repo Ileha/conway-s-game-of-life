@@ -1,7 +1,8 @@
-package app.common.collection;
+package app.common.collection.set;
 
 import app.common.Cell;
 import app.common.IRule;
+import app.common.collection.CellHandlers;
 import gnu.trove.set.hash.TLinkedHashSet;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class GameLifeTripleMapEdition extends CellHandlers {
+public class GameLifeTripleMapEdition extends CellHandlers<Set<Cell>> {
     private static final int    CONTAINERS_COUNT = 3;
     private static final int    NEXT_OFFSET = 1;
     private static final int    HEAP_OFFSET = 2;
@@ -55,6 +56,16 @@ public class GameLifeTripleMapEdition extends CellHandlers {
 
         executor = Executors.newSingleThreadExecutor();
         tasks = new Future[1];
+    }
+
+    @Override
+    protected boolean contains(Set<Cell> collection, Cell cell) {
+        return collection.contains(cell);
+    }
+
+    @Override
+    protected void add(Set<Cell> collection, Cell cell) {
+        collection.add(cell);
     }
 
     @Override

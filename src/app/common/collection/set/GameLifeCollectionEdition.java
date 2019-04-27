@@ -1,12 +1,14 @@
-package app.common.collection;
+package app.common.collection.set;
 
 import app.common.*;
+import app.common.collection.CellHandlers;
+import app.common.collection.GeneratorIterator;
 import gnu.trove.set.hash.TLinkedHashSet;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-public class GameLifeCollectionEdition extends CellHandlers {
+public class GameLifeCollectionEdition extends CellHandlers<Set<Cell>> {
     private static final int            CONTAINERS_COUNT = 2;
     private static final int            NEXT_OFFSET = 1;
 
@@ -50,6 +52,16 @@ public class GameLifeCollectionEdition extends CellHandlers {
 
         executor = Executors.newSingleThreadExecutor();
         tasks = new Future[1];
+    }
+
+    @Override
+    protected boolean contains(Set<Cell> collection, Cell cell) {
+        return collection.contains(cell);
+    }
+
+    @Override
+    protected void add(Set<Cell> collection, Cell cell) {
+        collection.add(cell);
     }
 
     @Override
