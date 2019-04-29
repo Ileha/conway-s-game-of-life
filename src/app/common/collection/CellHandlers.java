@@ -7,7 +7,9 @@ import app.common.IRule;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 /*
@@ -19,7 +21,9 @@ public abstract class CellHandlers<T> extends IGameLife {
      * currentThreadRI.states[] массив показывающий какие клетки живые, а какие нет индекс это номер клетки
      * currentThreadRI.cellTry клетка для тестов
      */
-    protected ThreadLocal<RuleInfo> ruleInfoByThread;//информация для тестов
+    protected ThreadLocal<RuleInfo> ruleInfoByThread;   //информация для тестов
+    protected ThreadLocal<Cell>     testCell;           //тестирующие клетки
+    private ExecutorService         executor;
 
     public CellHandlers(int width, int height, IRule rule) {
         super(width, height, rule);
@@ -29,6 +33,13 @@ public abstract class CellHandlers<T> extends IGameLife {
                 return new RuleInfo();
             }
         };
+        testCell = new ThreadLocal<Cell>() {
+            @Override
+            protected Cell initialValue() {
+                return new Cell();
+            }
+        };
+        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     /*
@@ -69,7 +80,10 @@ public abstract class CellHandlers<T> extends IGameLife {
         );
     }
 
-
+    /*
+     * решает каким методом обрабатывать клетку основываясь на её положении и положении предыдущей
+     * требует отсортированный массив
+     */
     protected void calcSortedFrame(List<Cell> array,
                                    T current,
                                    T next,
@@ -117,6 +131,16 @@ public abstract class CellHandlers<T> extends IGameLife {
      *            y
      *
      * c текущая живая клетка
+     *
+     * расположение результатов в массиве
+     *
+     * row 0   0   1  2
+     * row 1   3   4  5
+     * row 2   x   7  8 - x
+     * row 3   9  10 11
+     * row 4   12 13 14
+     *            |
+     *            y
      */
     protected void calcCellStep1(Cell cell,
                                  T current,
@@ -129,6 +153,16 @@ public abstract class CellHandlers<T> extends IGameLife {
 
         int x = cell.getX();
         int y = cell.getY();
+
+        for (int i = 0; i <= 14; i++) {
+            if (i == 6) { continue; }
+            int g = i;
+            currentThreadRI.tasks[i] = executor.submit(()-> {
+                Cell cellTry = testCell.get();
+                cellTry.set((g%3)+x, (Math.floorDiv(g, 3)-2)+y);
+                return contains(current, cellTry);
+            });
+        }
 
         //row 0
         currentThreadRI.cellTry.set(x, y-2);

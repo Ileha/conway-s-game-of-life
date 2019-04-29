@@ -5,6 +5,15 @@ import app.common.IRule;
 import app.common.collection.CellHandlers;
 import app.common.collection.GeneratorIterator;
 import app.common.collection.RuleInfo;
+import gnu.trove.impl.Constants;
+import gnu.trove.impl.hash.TIntShortHash;
+import gnu.trove.map.TObjectShortMap;
+import gnu.trove.map.hash.THashMap;
+import gnu.trove.map.hash.TIntShortHashMap;
+import gnu.trove.map.hash.TObjectShortHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.THashSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -13,20 +22,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class GameLifeListEdition extends CellHandlers<List<Cell>> {
-    private static final int            CONTAINERS_COUNT = 2;
-    private static final int            NEXT_OFFSET = 1;
+    private static final int                        CONTAINERS_COUNT = 2;
+    private static final int                        NEXT_OFFSET = 1;
 
-    private List<Cell>[]                containers;           //хранилище кадров
-    private GeneratorIterator<Cell>[]   heaps;                //хранилище объектов которые можно переиспользовать
+    private List<Cell>[]                            containers; //хранилище кадров
+    private GeneratorIterator<Cell>[]               heaps;      //хранилище объектов которые можно переиспользовать
 
     /*
      * принимает значения от 0 до CONTAINERS_COUNT
      * используется для пререключения между кадрами
      */
-    private int                         currentContainerIndex;
+    private int                                     currentContainerIndex;
 
-    private Future                      tasks[];
-    private ExecutorService             executor;
+    private Future                                  tasks[];
+    private ExecutorService                         executor;
+
+    private Set<Cell>                               cash;       //кэширование для повторного поиска
 
     public GameLifeListEdition(int width, int height, IRule rule) {
         super(width, height, rule);
@@ -45,29 +56,44 @@ public class GameLifeListEdition extends CellHandlers<List<Cell>> {
             };
         }
 
+        cash = new THashSet<>();
+
         executor = Executors.newSingleThreadExecutor();
         tasks = new Future[1];
     }
 
     @Override
     protected boolean contains(List<Cell> collection, Cell cell) {
-        if (Collections.binarySearch(collection, cell, Cell::compareTo) >= 0) {
-            return true;
+        if (collection == getCurrentContainer()) {
+            if (Collections.binarySearch(collection, cell, Cell::compareTo) >= 0) {
+                return true;
+            } else {
+                return false;
+            }
         }
         else {
-            return false;
+            return cash.contains(cell);
+//            for (int i = collection.size()-1; i >= 0; i--) {
+//                if (collection.get(i).equals(cell)) {
+//                    return true;
+//                }
+//            }
+//            return false;
         }
     }
 
     @Override
     protected void add(List<Cell> collection, Cell cell) {
-        synchronized (collection) {
-            collection.add(cell);
+        if (collection == getNextContainer()) {
+            cash.add(cell);
         }
+
+        collection.add(cell);
     }
 
     @Override
     public void change() {
+        cash.clear();
         currentContainerIndex = (currentContainerIndex +1)%CONTAINERS_COUNT;
     }
 
