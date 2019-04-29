@@ -4,16 +4,7 @@ import app.common.Cell;
 import app.common.IRule;
 import app.common.collection.CellHandlers;
 import app.common.collection.GeneratorIterator;
-import app.common.collection.RuleInfo;
-import gnu.trove.impl.Constants;
-import gnu.trove.impl.hash.TIntShortHash;
-import gnu.trove.map.TObjectShortMap;
-import gnu.trove.map.hash.THashMap;
-import gnu.trove.map.hash.TIntShortHashMap;
-import gnu.trove.map.hash.TObjectShortHashMap;
-import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.THashSet;
-import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;

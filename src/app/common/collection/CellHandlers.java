@@ -22,8 +22,6 @@ public abstract class CellHandlers<T> extends IGameLife {
      * currentThreadRI.cellTry клетка для тестов
      */
     protected ThreadLocal<RuleInfo> ruleInfoByThread;   //информация для тестов
-    protected ThreadLocal<Cell>     testCell;           //тестирующие клетки
-    private ExecutorService         executor;
 
     public CellHandlers(int width, int height, IRule rule) {
         super(width, height, rule);
@@ -33,13 +31,6 @@ public abstract class CellHandlers<T> extends IGameLife {
                 return new RuleInfo();
             }
         };
-        testCell = new ThreadLocal<Cell>() {
-            @Override
-            protected Cell initialValue() {
-                return new Cell();
-            }
-        };
-        executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     /*
@@ -153,16 +144,6 @@ public abstract class CellHandlers<T> extends IGameLife {
 
         int x = cell.getX();
         int y = cell.getY();
-
-        for (int i = 0; i <= 14; i++) {
-            if (i == 6) { continue; }
-            int g = i;
-            currentThreadRI.tasks[i] = executor.submit(()-> {
-                Cell cellTry = testCell.get();
-                cellTry.set((g%3)+x, (Math.floorDiv(g, 3)-2)+y);
-                return contains(current, cellTry);
-            });
-        }
 
         //row 0
         currentThreadRI.cellTry.set(x, y-2);

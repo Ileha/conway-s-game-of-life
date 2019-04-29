@@ -10,7 +10,6 @@ public class RuleInfo {
     short[] states = new short[9];
 
     Cell cellTry = new Cell();
-    Future<Boolean> tasks[] = new Future[25];
 
     int lx;
     int ly;

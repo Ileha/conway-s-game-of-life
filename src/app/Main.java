@@ -97,7 +97,7 @@ public class Main {
 
         //IFigure figure = new GlaiderGun();
         //IFigure figure = new RandomFill(0.45);
-        IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
+        IFigure figure = new RLEReader("./RLE/reflectors.rle");
         //IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 
