@@ -49,10 +49,7 @@ public class GameLifeHashEdition extends IGameLife {
         root.setCell(x, y);
     }
 
-    /*
-     * leftUpper rightUpper
-     * leftLower rightLower
-     */
+
     @Override
     public Iterable<Cell> getCurrent() {
         return new Iterable<Cell>() {

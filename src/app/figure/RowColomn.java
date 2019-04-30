@@ -9,8 +9,8 @@ public class RowColomn implements IFigure {
         data.setCurrent(1, 1);
         data.setCurrent(1, 2);
 
-        data.setCurrent(5, 0);
-        data.setCurrent(5, 1);
-        data.setCurrent(5, 2);
+//        data.setCurrent(5, 0);
+//        data.setCurrent(5, 1);
+//        data.setCurrent(5, 2);
     }
 }

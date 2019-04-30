@@ -2,16 +2,18 @@ package app.common.hashlife;
 
 import app.common.IRule;
 
+import java.util.Arrays;
+
 /*
 * leftUpper rightUpper
 * leftLower rightLower
 */
 public class Node {
-    public Node                     rightUpper;
     public Node                     leftUpper;
+    public Node                     rightUpper;
 
-    public Node                     rightLower;
     public Node                     leftLower;
+    public Node                     rightLower;
 
     private int                     level;
     private short                   alive;
@@ -41,14 +43,14 @@ public class Node {
 
         int nextLevel = level-1;
 
-        rightUpper = new Node(rule, nextLevel);
         leftUpper = new Node(rule, nextLevel);
+        rightUpper = new Node(rule, nextLevel);
 
-        rightLower = new Node(rule, nextLevel);
         leftLower = new Node(rule, nextLevel);
+        rightLower = new Node(rule, nextLevel);
     }
 
-    public Node(IRule rule, Node rU, Node lU, Node rL, Node lL) {
+    public Node(IRule rule, Node lU, Node rU, Node lL, Node rL) {
         this(rule);
         rightUpper = rU;
         leftUpper = lU;
@@ -71,27 +73,32 @@ public class Node {
         return alive;
     }
 
+    /*
+     * leftUpper rightUpper
+     * leftLower rightLower
+     */
     public void expandUniverse() {
-
-        rightUpper = new Node(rule,
-                new Node(rule, level-1), new Node(rule, level-1),
-                new Node(rule, level-1), rightUpper
-                );
 
         leftUpper = new Node(rule,
                 new Node(rule, level-1), new Node(rule, level-1),
-                leftUpper, new Node(rule, level-1)
-                );
+                new Node(rule, level-1), leftUpper
+        );
 
-        rightLower = new Node(rule,
-                new Node(rule, level-1), rightLower,
-                new Node(rule, level-1), new Node(rule, level-1)
+        rightUpper = new Node(rule,
+                new Node(rule, level-1), new Node(rule, level-1),
+                rightUpper,                    new Node(rule, level-1)
                 );
 
         leftLower = new Node(rule,
-                leftLower, new Node(rule, level-1),
+                new Node(rule, level-1), leftLower,
+                new Node(rule, level-1), new Node(rule, level-1)
+        );
+
+        rightLower = new Node(rule,
+                rightLower,                    new Node(rule, level-1),
                 new Node(rule, level-1), new Node(rule, level-1)
                 );
+
         level++;
     }
 
@@ -147,6 +154,9 @@ public class Node {
              *            y
              */
             RuleInfo currentThreadRI = ruleInfoByThread.get();
+            Arrays.fill(currentThreadRI.counts,  (short) 0);
+            Arrays.fill(currentThreadRI.states,  (short) 0);
+
             if (leftUpper.leftUpper.alive == 1) {
                 currentThreadRI.counts[0]+=1;
             }
@@ -154,7 +164,7 @@ public class Node {
                 currentThreadRI.counts[0]+=1;
                 currentThreadRI.counts[1]+=1;
             }
-            if (leftUpper.rightLower.alive == 1) {
+            if (leftUpper.leftLower.alive == 1) {
                 currentThreadRI.counts[0]+=1;
                 currentThreadRI.counts[2]+=1;
             }
@@ -166,6 +176,7 @@ public class Node {
                 currentThreadRI.counts[3]+=1;
             }
 
+
             if (rightUpper.leftUpper.alive == 1) {
                 currentThreadRI.counts[0]+=1;
                 currentThreadRI.counts[1]+=1;
@@ -173,7 +184,7 @@ public class Node {
             if (rightUpper.rightUpper.alive == 1) {
                 currentThreadRI.counts[1]+=1;
             }
-            if (rightUpper.rightLower.alive == 1) {//cell 1
+            if (rightUpper.leftLower.alive == 1) {//cell 1
                 currentThreadRI.states[1] = 1;
 
                 currentThreadRI.counts[0]+=1;
@@ -184,6 +195,7 @@ public class Node {
                 currentThreadRI.counts[1]+=1;
                 currentThreadRI.counts[3]+=1;
             }
+
 
             if (leftLower.leftUpper.alive == 1) {
                 currentThreadRI.counts[0]+=1;
@@ -196,7 +208,7 @@ public class Node {
                 currentThreadRI.counts[1]+=1;
                 currentThreadRI.counts[3]+=1;
             }
-            if (leftLower.rightLower.alive == 1) {
+            if (leftLower.leftLower.alive == 1) {
                 currentThreadRI.counts[2]+=1;
             }
             if (leftLower.rightLower.alive == 1) {
@@ -204,26 +216,27 @@ public class Node {
                 currentThreadRI.counts[3]+=1;
             }
 
-            if (leftLower.leftUpper.alive == 1) {//cell 3
+
+            if (rightLower.leftUpper.alive == 1) {//cell 3
                 currentThreadRI.states[3] = 1;
 
                 currentThreadRI.counts[0]+=1;
                 currentThreadRI.counts[1]+=1;
                 currentThreadRI.counts[2]+=1;
             }
-            if (leftLower.rightUpper.alive == 1) {
+            if (rightLower.rightUpper.alive == 1) {
                 currentThreadRI.counts[1]+=1;
                 currentThreadRI.counts[3]+=1;
             }
-            if (leftLower.rightLower.alive == 1) {
+            if (rightLower.leftLower.alive == 1) {
                 currentThreadRI.counts[2]+=1;
                 currentThreadRI.counts[3]+=1;
             }
-            if (leftLower.rightLower.alive == 1) {
+            if (rightLower.rightLower.alive == 1) {
                 currentThreadRI.counts[3]+=1;
             }
 
-            Node res = new Node(rule, 2);
+            Node res = new Node(rule, 1);
             for (int i = 0; i < currentThreadRI.counts.length; i++) {
                 if (rule.rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
                     int nx = i%2;
@@ -253,13 +266,19 @@ public class Node {
         * 3 4 5
         * 6 7 8
         */
+
+        Node un0 = uniteNodeInCentere(n0, n1, n3, n4);
+        Node un1 = uniteNodeInCentere(n1, n2, n4, n5);
+        Node un2 = uniteNodeInCentere(n3, n4, n6, n7);
+        Node un3 = uniteNodeInCentere(n4, n5, n7, n8);
+
         return new Node(
                 rule,
-                uniteNodeInCentere(n0, n1, n3, n4),
-                uniteNodeInCentere(n1, n2, n4, n5),
-                uniteNodeInCentere(n3, n4, n6, n7),
-                uniteNodeInCentere(n4, n5, n7, n8)
-        ) ;
+                un0,
+                un1,
+                un2,
+                un3
+        );
     }
 
 
@@ -297,13 +316,20 @@ public class Node {
                 lower.rightUpper);
     }
 
-    static Node uniteNodeInCentere(Node rightUpper,
-                                   Node leftUpper,
-                                   Node rightLower,
-                                   Node leftLower)
+    /*
+     * leftUpper rightUpper     leftUpper rightUpper
+     * leftLower rightLower     leftLower rightLower
+     *
+     * leftUpper rightUpper     leftUpper rightUpper
+     * leftLower rightLower     leftLower rightLower
+     */
+    static Node uniteNodeInCentere(Node leftUpper,
+                                   Node rightUpper,
+                                   Node leftLower,
+                                   Node rightLower)
     {
         return new Node(rightUpper.rule,
-                leftUpper.rightUpper,
+                leftUpper.rightLower,
                 rightUpper.leftLower,
                 leftLower.rightUpper,
                 rightLower.leftUpper);

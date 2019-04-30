@@ -111,7 +111,7 @@ public class Main {
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeHashEdition(8, 8, (short count, short state)-> {
+        data = new GameLifeHashEdition(4, 4, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -125,8 +125,8 @@ public class Main {
 
         //IFigure figure = new GlaiderGun();
         //IFigure figure = new RandomFill(0.45);
-        //IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
-        IFigure figure = new RowColomn();
+        IFigure figure = new RLEReader("./RLE/GlaiderGun.rle");
+        //IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 
         figure.setFigure(data, 0, 0);
