@@ -14,6 +14,8 @@ public abstract class IGameLife {
         h = height;
     }
 
+    public void start() { } //вызывается однажды перед стартом
+
     public abstract void change();
 
     /*

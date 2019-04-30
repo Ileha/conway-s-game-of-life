@@ -3,6 +3,7 @@ package app;
 import app.common.IGameLife;
 import app.common.Cell;
 import app.common.collection.*;
+import app.common.hashlife.GameLifeHashEdition;
 import app.common.hashlife.Node;
 import app.figure.*;
 import java.awt.*;
@@ -82,7 +83,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, FigureException {
-        short live = 1;
+        /*short live = 1;
         short dead = 0;
 
         Node node = new Node((short count, short state)-> {
@@ -97,15 +98,20 @@ public class Main {
             }
         }, 2);
 
+        node.setCell(2,3);
+        node.setCell(3,2);
+        node.setCell(2,2);
+        node.setCell(3,3);
+
         node.expandUniverse();
 
-        System.out.println(node);
+        System.out.println(node);*/
 
-        /*init();
+        init();
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeCollectionEdition(1200, 700, (short count, short state)-> {
+        data = new GameLifeHashEdition(8, 8, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -119,24 +125,25 @@ public class Main {
 
         //IFigure figure = new GlaiderGun();
         //IFigure figure = new RandomFill(0.45);
-        IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
-        //IFigure figure = new RowColomn();
+        //IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
+        IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 
         figure.setFigure(data, 0, 0);
 
+        data.start();
         while (true) {
             long tStart = System.currentTimeMillis();
 
-            Future[] future = data.calcNextStepAsync();
-            //data.calcSingleCell();
+            //Future[] future = data.calcNextStepAsync();
+            data.calcNextStep();
 
             checkKeys();
             draw();
 
-            for (int i = 0; i < future.length; i++) {
-                future[i].get();
-            }
+//            for (int i = 0; i < future.length; i++) {
+//                future[i].get();
+//            }
 
             data.change();
 
@@ -151,6 +158,6 @@ public class Main {
             StdDraw.textLeft(20, 20, time);
             StdDraw.textLeft(20, 40, fps);
             StdDraw.show();
-        }*/
+        }
     }
 }
