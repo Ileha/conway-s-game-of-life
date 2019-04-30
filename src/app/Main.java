@@ -2,14 +2,10 @@ package app;
 
 import app.common.IGameLife;
 import app.common.Cell;
-import app.common.collection.*;
-import app.common.hashlife.GameLifeHashEdition;
-import app.common.hashlife.Node;
+import app.common.collection.hashlife.GameLifeHashEdition;
 import app.figure.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.*;
 
 import app.figure.Exceptions.FigureException;

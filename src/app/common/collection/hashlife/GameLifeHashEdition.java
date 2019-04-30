@@ -1,4 +1,4 @@
-package app.common.hashlife;
+package app.common.collection.hashlife;
 
 import app.common.Cell;
 import app.common.IGameLife;
@@ -21,6 +21,7 @@ public class GameLifeHashEdition extends IGameLife {
 
     @Override
     public void start() {
+        System.out.println(root.sideSize());
         root.expandUniverse();
     }
 
@@ -44,7 +45,7 @@ public class GameLifeHashEdition extends IGameLife {
     public void setCurrent(int x, int y) {
         int max = Math.max(x, y);
         while (root.sideSize() < max) {
-            root.expandUniverse();
+            root.relativeExpandUniverse();
         }
         root.setCell(x, y);
     }

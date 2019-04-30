@@ -1,4 +1,4 @@
-package app.common.hashlife;
+package app.common.collection.hashlife;
 
 import app.common.IRule;
 
@@ -98,6 +98,16 @@ public class Node {
                 rightLower,                    new Node(rule, level-1),
                 new Node(rule, level-1), new Node(rule, level-1)
                 );
+
+        level++;
+    }
+    public void relativeExpandUniverse() {
+        leftUpper = new Node(rule,
+                leftUpper, rightUpper,
+                leftLower, rightLower);
+        rightUpper = new Node(rule, level);
+        leftLower = new Node(rule, level);
+        rightLower = new Node(rule, level);
 
         level++;
     }
