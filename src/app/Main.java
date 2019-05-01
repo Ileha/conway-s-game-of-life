@@ -79,35 +79,11 @@ public class Main {
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException, FigureException {
-        /*short live = 1;
-        short dead = 0;
-
-        Node node = new Node((short count, short state)-> {
-            if (count == 3) {
-                return live;
-            }
-            else if (count == 2 && state > 0) {
-                return live;
-            }
-            else {
-                return dead;
-            }
-        }, 2);
-
-        node.setCell(2,3);
-        node.setCell(3,2);
-        node.setCell(2,2);
-        node.setCell(3,3);
-
-        node.expandUniverse();
-
-        System.out.println(node);*/
-
         init();
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeHashEdition(4, 4, (short count, short state)-> {
+        data = new GameLifeHashEdition(128, 128, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -121,7 +97,7 @@ public class Main {
 
         //IFigure figure = new GlaiderGun();
         //IFigure figure = new RandomFill(0.45);
-        IFigure figure = new RLEReader("./RLE/GlaiderGun.rle");
+        IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
         //IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 

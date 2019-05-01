@@ -19,6 +19,10 @@ public abstract class GeneratorIterator<T> implements Iterable<T> {
         container.add(element);
     }
 
+    public int size() {
+        return container.size();
+    }
+
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {

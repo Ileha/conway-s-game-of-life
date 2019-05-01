@@ -1,64 +1,85 @@
 package app.common.collection.hashlife;
 
-import app.common.IRule;
-
-import java.util.Arrays;
-
 /*
 * leftUpper rightUpper
 * leftLower rightLower
 */
 public class Node {
-    public Node                     leftUpper;
-    public Node                     rightUpper;
+    private static NodeHandler  handler;//обработчик блока клеток
 
-    public Node                     leftLower;
-    public Node                     rightLower;
+    public Node                 leftUpper;
+    public Node                 rightUpper;
 
-    private int                     level;
-    private short                   alive;
+    public Node                 leftLower;
+    public Node                 rightLower;
 
-    private IRule                   rule;
-    protected ThreadLocal<RuleInfo> ruleInfoByThread;//информация для тестов
+    private int                 level;
+    private short               alive;
 
-    public Node(IRule rule) {
-        this.rule = rule;
-        ruleInfoByThread = new ThreadLocal<RuleInfo>() {
-            @Override
-            protected RuleInfo initialValue() {
-                return new RuleInfo();
-            }
-        };
+    public Node() {}
+    public Node(Node original) {
+        leftUpper = original.leftUpper;
+        rightUpper = original.rightUpper;
+        leftLower = original.leftLower;
+        rightLower = original.rightLower;
+
+        alive = original.alive;
+        level = original.level;
     }
 
-    public Node(IRule rule, int level) {
-        this(rule);
-        this.level = level;
+    public static Node uniteAll(Node lU, Node rU, Node lL, Node rL) {
+        Node res = new Node();
+        res.leftUpper = lU;
+        res.rightUpper = rU;
+        res.leftLower = lL;
+        res.rightLower = rL;
 
+        res.alive = (short) (lU.alive + rU.alive + lL.alive + rL.alive);
+        res.level = lU.level+1;
+
+        if (res.level == 1) {
+            res = handler.checkSimpleHash(res);
+        }
+        return res;
+    }
+
+    public static Node createEmptyNode(int level) {
+        Node res = null;
         if (level == 0) {
-            this.rule = rule;
-            this.alive = 0;
-            return;
+            res = new Node();
+            res.alive = 0;
+            res.level = 0;
+            return res;
         }
 
         int nextLevel = level-1;
+        res = new Node();
+        res.level = level;
 
-        leftUpper = new Node(rule, nextLevel);
-        rightUpper = new Node(rule, nextLevel);
+        res.leftUpper = createEmptyNode(nextLevel);
+        res.rightUpper = createEmptyNode(nextLevel);
 
-        leftLower = new Node(rule, nextLevel);
-        rightLower = new Node(rule, nextLevel);
+        res.leftLower = createEmptyNode(nextLevel);
+        res.rightLower = createEmptyNode(nextLevel);
+
+        return res;
     }
 
-    public Node(IRule rule, Node lU, Node rU, Node lL, Node rL) {
-        this(rule);
-        rightUpper = rU;
-        leftUpper = lU;
+    public static Node hashAll(Node node) {
+        if (node.level == 1) {
+            return handler.checkSimpleHash(node);
+        }
+        else {
+            node.leftUpper = hashAll(node.leftUpper);
+            node.rightUpper = hashAll(node.rightUpper);
+            node.leftLower = hashAll(node.leftLower);
+            node.rightLower = hashAll(node.rightLower);
+            return node;
+        }
+    }
 
-        rightLower = rL;
-        leftLower = lL;
-
-        level = rU.level+1;
+    public static void setHandler(NodeHandler newHandler) {
+        handler = newHandler;
     }
 
     public int sideSize() {
@@ -74,40 +95,47 @@ public class Node {
     }
 
     /*
-     * leftUpper rightUpper
-     * leftLower rightLower
-     */
+    * увеличивает мир в 4 раза и существующий помещает в центр
+    * !!! края являются одним и тем же нодом
+    */
     public void expandUniverse() {
 
-        leftUpper = new Node(rule,
-                new Node(rule, level-1), new Node(rule, level-1),
-                new Node(rule, level-1), leftUpper
+        Node subNode = handler.getZeroByLevel(level-1);
+
+        leftUpper = Node.uniteAll(
+                subNode, subNode,
+                subNode, leftUpper
         );
 
-        rightUpper = new Node(rule,
-                new Node(rule, level-1), new Node(rule, level-1),
-                rightUpper,                    new Node(rule, level-1)
+
+        rightUpper = Node.uniteAll(
+                subNode,    subNode,
+                rightUpper, subNode
                 );
 
-        leftLower = new Node(rule,
-                new Node(rule, level-1), leftLower,
-                new Node(rule, level-1), new Node(rule, level-1)
+        leftLower = Node.uniteAll(
+                subNode, leftLower,
+                subNode, subNode
         );
 
-        rightLower = new Node(rule,
-                rightLower,                    new Node(rule, level-1),
-                new Node(rule, level-1), new Node(rule, level-1)
+        rightLower = Node.uniteAll(
+                rightLower, subNode,
+                subNode,    subNode
                 );
 
         level++;
     }
+
+    /*
+     * увеличивает мир в 4 раза и существующий помещает в левый верхний квадрат
+     */
     public void relativeExpandUniverse() {
-        leftUpper = new Node(rule,
+        leftUpper = Node.uniteAll(
                 leftUpper, rightUpper,
                 leftLower, rightLower);
-        rightUpper = new Node(rule, level);
-        leftLower = new Node(rule, level);
-        rightLower = new Node(rule, level);
+        rightUpper = Node.createEmptyNode(level);
+        leftLower = Node.createEmptyNode(level);
+        rightLower = Node.createEmptyNode(level);
 
         level++;
     }
@@ -116,6 +144,9 @@ public class Node {
         if (level == 0) {
             alive = (short)1;
             return;
+        }
+        else {
+            alive++;
         }
 
         int sideNextSquare = (int) Math.pow(2, level-1);
@@ -151,125 +182,27 @@ public class Node {
      */
     public Node nextStep() {
 
+        if (alive == 0) {
+            return handler.getZeroByLevel(level-1);
+        }
         /*
         * квадрат со стороной 4
         */
         if (level == 2) {
-            /*
-             * row 0   0  0  0 0
-             * row 1   0 c0 с1 0
-             * row 2   0 с2 с3 0 - x
-             * row 3   0  0  0 0
-             *            |
-             *            y
-             */
-            RuleInfo currentThreadRI = ruleInfoByThread.get();
-            Arrays.fill(currentThreadRI.counts,  (short) 0);
-            Arrays.fill(currentThreadRI.states,  (short) 0);
-
-            if (leftUpper.leftUpper.alive == 1) {
-                currentThreadRI.counts[0]+=1;
-            }
-            if (leftUpper.rightUpper.alive == 1) {
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[1]+=1;
-            }
-            if (leftUpper.leftLower.alive == 1) {
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[2]+=1;
-            }
-            if (leftUpper.rightLower.alive == 1) {//cell 0
-                currentThreadRI.states[0] = 1;
-
-                currentThreadRI.counts[1]+=1;
-                currentThreadRI.counts[2]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-
-
-            if (rightUpper.leftUpper.alive == 1) {
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[1]+=1;
-            }
-            if (rightUpper.rightUpper.alive == 1) {
-                currentThreadRI.counts[1]+=1;
-            }
-            if (rightUpper.leftLower.alive == 1) {//cell 1
-                currentThreadRI.states[1] = 1;
-
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[2]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-            if (rightUpper.rightLower.alive == 1) {
-                currentThreadRI.counts[1]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-
-
-            if (leftLower.leftUpper.alive == 1) {
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[2]+=1;
-            }
-            if (leftLower.rightUpper.alive == 1) {//cell 2
-                currentThreadRI.states[2] = 1;
-
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[1]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-            if (leftLower.leftLower.alive == 1) {
-                currentThreadRI.counts[2]+=1;
-            }
-            if (leftLower.rightLower.alive == 1) {
-                currentThreadRI.counts[2]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-
-
-            if (rightLower.leftUpper.alive == 1) {//cell 3
-                currentThreadRI.states[3] = 1;
-
-                currentThreadRI.counts[0]+=1;
-                currentThreadRI.counts[1]+=1;
-                currentThreadRI.counts[2]+=1;
-            }
-            if (rightLower.rightUpper.alive == 1) {
-                currentThreadRI.counts[1]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-            if (rightLower.leftLower.alive == 1) {
-                currentThreadRI.counts[2]+=1;
-                currentThreadRI.counts[3]+=1;
-            }
-            if (rightLower.rightLower.alive == 1) {
-                currentThreadRI.counts[3]+=1;
-            }
-
-            Node res = new Node(rule, 1);
-            for (int i = 0; i < currentThreadRI.counts.length; i++) {
-                if (rule.rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
-                    int nx = i%2;
-                    int ny = Math.floorDiv(i, 2);
-                    res.setCell(nx, ny);
-                }
-            }
-
-            return res;
+            return handler.handleNodeSide4(this);
         }
 
-        Node n0 = leftUpper.nextStep();
-        Node n1 = centeredHorizontal(leftUpper, rightUpper).nextStep();
-        Node n2 = rightUpper.nextStep();
+        Node n0 = leftUpper.centeredSubnode();
+        Node n1 = centeredHorizontal(leftUpper, rightUpper);
+        Node n2 = rightUpper.centeredSubnode();
 
-        Node n3 = centeredVertical(leftUpper, leftLower).nextStep();
-        Node n4 = centeredSubnode().nextStep();
-        Node n5 = centeredVertical(rightUpper, rightLower).nextStep();
+        Node n3 = centeredVertical(leftUpper, leftLower);
+        Node n4 = centeredSubSubnode();
+        Node n5 = centeredVertical(rightUpper, rightLower);
 
-        Node n6 = leftLower.nextStep();
-        Node n7 = centeredHorizontal(leftLower, rightLower).nextStep();
-        Node n8 = rightLower.nextStep();
-
+        Node n6 = leftLower.centeredSubnode();
+        Node n7 = centeredHorizontal(leftLower, rightLower);
+        Node n8 = rightLower.centeredSubnode();
 
         /*
         * 0 1 2
@@ -277,71 +210,101 @@ public class Node {
         * 6 7 8
         */
 
-        Node un0 = uniteNodeInCentere(n0, n1, n3, n4);
-        Node un1 = uniteNodeInCentere(n1, n2, n4, n5);
-        Node un2 = uniteNodeInCentere(n3, n4, n6, n7);
-        Node un3 = uniteNodeInCentere(n4, n5, n7, n8);
-
-        return new Node(
-                rule,
-                un0,
-                un1,
-                un2,
-                un3
+        return Node.uniteAll(
+                Node.uniteAll(n0, n1, n3, n4).nextStep(),
+                Node.uniteAll(n1, n2, n4, n5).nextStep(),
+                Node.uniteAll(n3, n4, n6, n7).nextStep(),
+                Node.uniteAll(n4, n5, n7, n8).nextStep()
         );
     }
 
+    /*
+    * создаёт новый узел который включает только центр текущего
+    */
+    public Node centeredSubnode() {
+        return Node.uniteAll(
+                leftUpper.rightLower,
+                rightUpper.leftLower,
+                leftLower.rightUpper,
+                rightLower.leftUpper);
+    }
 
-    @Override
+    /*
+     * !!! создаёт новый узел который включает только центр центра текущего
+     */
+    public Node centeredSubSubnode() {
+        return Node.uniteAll(
+                leftUpper.rightLower.rightLower,
+                rightUpper.leftLower.leftLower,
+                leftLower.rightUpper.rightUpper,
+                rightLower.leftUpper.leftUpper);
+    }
+
+    /*
+     * создаёт новый узел который включает правую часть left и левую часть right
+     */
+    static Node centeredHorizontal(Node left, Node right) {
+        return Node.uniteAll(
+                left.rightUpper.rightLower,
+                right.leftUpper.leftLower,
+                left.rightLower.rightUpper,
+                right.leftLower.leftUpper);
+    }
+
+    /*
+     * создаёт новый узел который включает нижнюю часть upper и верхнюю часть lower
+     */
+    static Node centeredVertical(Node upper, Node lower) {
+        return Node.uniteAll(
+                upper.leftLower.rightLower,
+                upper.rightLower.leftLower,
+                lower.leftUpper.rightUpper,
+                lower.rightUpper.leftUpper);
+    }
+
+    /*@Override
     public String toString() {
         if (level == 0) {
             return String.valueOf(alive);
         }
-
-        //StringBuilder sb = new StringBuilder();
         return String.format("\n[%s, %s, %s, %s]", leftUpper, rightUpper, leftLower, rightLower);
+    }*/
+
+    @Override
+    public int hashCode() {
+
+        if (level == 0) {
+            return (int) alive;
+        }
+        else if (level == 1) {
+            return  leftUpper.hashCode() +
+                    11 * rightUpper.hashCode() +
+                    101 * leftLower.hashCode() +
+                    1007 * rightLower.hashCode();
+        }
+        return System.identityHashCode(leftUpper) +
+                11 * System.identityHashCode(rightUpper) +
+                101 * System.identityHashCode(leftLower) +
+                1007 * System.identityHashCode(rightLower) ;
     }
 
-    public Node centeredSubnode() {
-        return new Node(rule,
-                leftUpper.rightLower,
-                rightUpper.leftLower,
-                leftLower.rightUpper,
-                rightLower.leftUpper);
-    }
-
-    static Node centeredHorizontal(Node left, Node right) {
-        return new Node(right.rule,
-                left.rightUpper,
-                right.leftUpper,
-                left.rightLower,
-                right.leftLower);
-    }
-
-    static Node centeredVertical(Node upper, Node lower) {
-        return new Node(upper.rule,
-                upper.leftLower,
-                upper.rightLower,
-                lower.leftUpper,
-                lower.rightUpper);
-    }
-
-    /*
-     * leftUpper rightUpper     leftUpper rightUpper
-     * leftLower rightLower     leftLower rightLower
-     *
-     * leftUpper rightUpper     leftUpper rightUpper
-     * leftLower rightLower     leftLower rightLower
-     */
-    static Node uniteNodeInCentere(Node leftUpper,
-                                   Node rightUpper,
-                                   Node leftLower,
-                                   Node rightLower)
-    {
-        return new Node(rightUpper.rule,
-                leftUpper.rightLower,
-                rightUpper.leftLower,
-                leftLower.rightUpper,
-                rightLower.leftUpper);
+    @Override
+    public boolean equals(Object o) {
+        Node t = (Node)o;
+        if (level != t.level)
+            return false;
+        if (level == 0) {
+            return alive == t.alive;
+        }
+        else if (level == 1) {
+            return (leftUpper.equals(leftUpper) &&
+                    rightUpper.equals(t.rightUpper) &&
+                    leftLower.equals(t.leftLower) &&
+                    rightLower.equals(t.rightLower));
+        }
+        return (leftUpper == t.leftUpper &&
+                rightUpper == t.rightUpper &&
+                leftLower  == t.leftLower &&
+                rightLower == t.rightLower);
     }
 }
