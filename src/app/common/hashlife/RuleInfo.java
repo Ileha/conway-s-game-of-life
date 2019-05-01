@@ -1,4 +1,4 @@
-package app.common.collection.hashlife;
+package app.common.hashlife;
 
 public class RuleInfo {
     short[] counts = new short[4];

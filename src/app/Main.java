@@ -2,7 +2,7 @@ package app;
 
 import app.common.IGameLife;
 import app.common.Cell;
-import app.common.collection.hashlife.GameLifeHashEdition;
+import app.common.hashlife.GameLifeHashEdition;
 import app.figure.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -83,7 +83,7 @@ public class Main {
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeHashEdition(128, 128, (short count, short state)-> {
+        data = new GameLifeHashEdition(1024, 1024, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -97,25 +97,25 @@ public class Main {
 
         //IFigure figure = new GlaiderGun();
         //IFigure figure = new RandomFill(0.45);
-        IFigure figure = new RLEReader("./RLE/2c5-spaceship-gun-p690.rle");
+        IFigure figure = new RLEReader("./RLE/rubber.rle");
         //IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 
-        figure.setFigure(data, 0, 0);
+        figure.setFigure(data, 512, 650);
 
         data.start();
         while (true) {
             long tStart = System.currentTimeMillis();
 
-            //Future[] future = data.calcNextStepAsync();
-            data.calcNextStep();
+            Future[] future = data.calcNextStepAsync();
+            //data.calcNextStep();
 
             checkKeys();
             draw();
 
-//            for (int i = 0; i < future.length; i++) {
-//                future[i].get();
-//            }
+            for (int i = 0; i < future.length; i++) {
+                future[i].get();
+            }
 
             data.change();
 

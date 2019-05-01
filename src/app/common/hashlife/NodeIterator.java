@@ -1,4 +1,4 @@
-package app.common.collection.hashlife;
+package app.common.hashlife;
 
 import app.common.Cell;
 

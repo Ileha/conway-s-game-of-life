@@ -1,4 +1,4 @@
-package app.common.collection.hashlife;
+package app.common.hashlife;
 
 /*
 * leftUpper rightUpper
@@ -13,8 +13,8 @@ public class Node {
     public Node                 leftLower;
     public Node                 rightLower;
 
-    private int                 level;
-    private short               alive;
+    private short               level;
+    private int                 alive;
 
     public Node() {}
     public Node(Node original) {
@@ -34,8 +34,8 @@ public class Node {
         res.leftLower = lL;
         res.rightLower = rL;
 
-        res.alive = (short) (lU.alive + rU.alive + lL.alive + rL.alive);
-        res.level = lU.level+1;
+        res.alive = lU.alive + rU.alive + lL.alive + rL.alive;
+        res.level = (short) (lU.level+1);
 
         if (res.level == 1) {
             res = handler.checkSimpleHash(res);
@@ -43,7 +43,7 @@ public class Node {
         return res;
     }
 
-    public static Node createEmptyNode(int level) {
+    public static Node createEmptyNode(short level) {
         Node res = null;
         if (level == 0) {
             res = new Node();
@@ -52,7 +52,7 @@ public class Node {
             return res;
         }
 
-        int nextLevel = level-1;
+        short nextLevel = (short) (level-1);
         res = new Node();
         res.level = level;
 
@@ -274,7 +274,7 @@ public class Node {
     public int hashCode() {
 
         if (level == 0) {
-            return (int) alive;
+            return alive;
         }
         else if (level == 1) {
             return  leftUpper.hashCode() +

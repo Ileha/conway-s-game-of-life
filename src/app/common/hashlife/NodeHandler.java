@@ -1,4 +1,4 @@
-package app.common.collection.hashlife;
+package app.common.hashlife;
 
 import app.common.IRule;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -39,7 +39,7 @@ public abstract class NodeHandler implements IRule {
     }
     private Node getSimpleZeroByLevel(int level) {
         if (level == 1) {
-            return checkSimpleHash(Node.createEmptyNode(1));
+            return checkSimpleHash(Node.createEmptyNode((short) 1));
         }
         return Node.uniteAll(
                 getSimpleZeroByLevel(level-1),
@@ -167,7 +167,7 @@ public abstract class NodeHandler implements IRule {
             currentThreadRI.counts[3]+=1;
         }
 
-        res = Node.createEmptyNode(1);
+        res = Node.createEmptyNode((short) 1);
         for (int i = 0; i < currentThreadRI.counts.length; i++) {
             if (rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
                 int nx = i%2;
