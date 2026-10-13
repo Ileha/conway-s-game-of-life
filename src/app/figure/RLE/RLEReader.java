@@ -29,6 +29,41 @@ public class RLEReader implements IFigure {
         this.path = path;
     }
 
+    /*
+    * читает только заголовок файла
+    * возвращает размеры фигуры {x, y}
+    */
+    public int[] readSize() throws FigureException {
+        try (BufferedReader r = Files.newBufferedReader(Paths.get(path))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (line.length() == 0) {continue;}
+                if (line.charAt(0) == COMMENT) {continue;}
+
+                Matcher match = sizePattern.matcher(line);
+                if (match.find()) {
+                    return parseSize(match);
+                }
+                break;
+            }
+        } catch (IOException e) {
+            throw new RLEException("can't read rle file " + path + ": " + e.getMessage());
+        }
+        throw new RLEException("rle file don't have one sizePattern of plate");
+    }
+
+    private static int[] parseSize(Matcher match) throws RLEException {
+        if ("x".equals(match.group(1)) && "y".equals(match.group(3))) {
+            return new int[] {Integer.parseInt(match.group(2)), Integer.parseInt(match.group(4))};
+        }
+        else if ("y".equals(match.group(1)) && "x".equals(match.group(3))) {
+            return new int[] {Integer.parseInt(match.group(4)), Integer.parseInt(match.group(2))};
+        }
+        else {
+            throw new RLEException("rle file don't have one sizePattern of plate");
+        }
+    }
+
     @Override
     public void setFigure(IGameLife data, int xOffset, int yOffset) throws FigureException {
         /*
@@ -62,20 +97,10 @@ public class RLEReader implements IFigure {
                     sizeFind = true;
                     Matcher match = sizePattern.matcher(line);
                     if (match.find()) {
-                        int x = 0;
-                        int y = 0;
+                        int[] size = parseSize(match);
+                        int x = size[0];
+                        int y = size[1];
 
-                        if ("x".equals(match.group(1)) && "y".equals(match.group(3))) {
-                            y = Integer.parseInt(match.group(4));
-                            x = Integer.parseInt(match.group(2));
-                        }
-                        else if ("y".equals(match.group(1)) && "x".equals(match.group(3))) {
-                            x = Integer.parseInt(match.group(4));
-                            y = Integer.parseInt(match.group(2));
-                        }
-                        else {
-                            throw new RLEException("rle file don't have one sizePattern of plate");
-                        }
                         if (!data.isUsedInfinitePlate() && (x+xOffset > data.getWidth() || y+yOffset > data.getHeight())) {
                             throw new RLEException("figure is bigger than plate");
                         }
