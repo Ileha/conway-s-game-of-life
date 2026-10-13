@@ -21,16 +21,16 @@ public abstract class NodeIterator implements Iterable<Cell>, Iterator<Cell> {
     }
 
     private Cell nextCell() {
-        if (index < contain.size()-1) {
-            index++;
-            return contain.get(index);
+        Cell res;
+        if (index < contain.size()) {
+            res = contain.get(index);
         }
         else {
-            index++;
-            Cell res = new Cell();
+            res = new Cell();
             contain.add(res);
-            return res;
         }
+        index++;
+        return res;
     }
 
     private void nodeIterate(Node toIterate, int x, int y) {

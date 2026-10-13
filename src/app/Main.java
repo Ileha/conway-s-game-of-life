@@ -2,6 +2,7 @@ package app;
 
 import app.common.IGameLife;
 import app.common.Cell;
+import app.common.collection.GameLifeCollectionEdition;
 import app.common.hashlife.GameLifeHashEdition;
 import app.figure.*;
 import java.awt.*;
@@ -17,8 +18,8 @@ public class Main {
     static int offsetX = 0;
     static int offsetY = 0;
 
-    static double scaleX = 1200;
-    static double scaleY = 700;
+    static double scaleX = 12000;
+    static double scaleY = 7000;
 
     static double deltaTime = 1;
 
@@ -83,7 +84,7 @@ public class Main {
         short live = 1;
         short dead = 0;
 
-        data = new GameLifeHashEdition(1024, 1024, (short count, short state)-> {
+        data = new GameLifeHashEdition(4096, 4096, (short count, short state)-> {
             if (count == 3) {
                 return live;
             }
@@ -96,12 +97,12 @@ public class Main {
         });
 
         //IFigure figure = new GlaiderGun();
-        //IFigure figure = new RandomFill(0.45);
-        IFigure figure = new RLEReader("./RLE/6enginecordershipgun.rle");
+//        IFigure figure = new RandomFill(0.45);
+        IFigure figure = new RLEReader("./RLE/clock.rle");
         //IFigure figure = new RowColomn();
         //IFigure figure = new Task();
 
-        figure.setFigure(data, 512, 650);
+        figure.setFigure(data, 0, 0);
 
         data.start();
         while (true) {

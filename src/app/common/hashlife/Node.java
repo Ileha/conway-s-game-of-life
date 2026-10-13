@@ -66,6 +66,9 @@ public class Node {
     }
 
     public static Node hashAll(Node node) {
+        if (node.alive == 0) {
+            return handler.getZeroByLevel(node.level);//пустые ноды уже общие и захешированы
+        }
         if (node.level == 1) {
             return handler.checkSimpleHash(node);
         }
@@ -97,79 +100,65 @@ public class Node {
     /*
     * увеличивает мир в 4 раза и существующий помещает в центр
     * !!! края являются одним и тем же нодом
+    * не изменяет текущий нод, возвращает новый
     */
-    public void expandUniverse() {
+    public Node expandUniverse() {
 
         Node subNode = handler.getZeroByLevel(level-1);
 
-        leftUpper = Node.uniteAll(
-                subNode, subNode,
-                subNode, leftUpper
+        return Node.uniteAll(
+                Node.uniteAll(
+                        subNode, subNode,
+                        subNode, leftUpper),
+                Node.uniteAll(
+                        subNode,    subNode,
+                        rightUpper, subNode),
+                Node.uniteAll(
+                        subNode, leftLower,
+                        subNode, subNode),
+                Node.uniteAll(
+                        rightLower, subNode,
+                        subNode,    subNode)
         );
-
-
-        rightUpper = Node.uniteAll(
-                subNode,    subNode,
-                rightUpper, subNode
-                );
-
-        leftLower = Node.uniteAll(
-                subNode, leftLower,
-                subNode, subNode
-        );
-
-        rightLower = Node.uniteAll(
-                rightLower, subNode,
-                subNode,    subNode
-                );
-
-        level++;
     }
 
     /*
      * увеличивает мир в 4 раза и существующий помещает в левый верхний квадрат
+     * пустые квадраты общие (из кэша нулевых нодов), поэтому возвращает новый нод
      */
-    public void relativeExpandUniverse() {
-        leftUpper = Node.uniteAll(
-                leftUpper, rightUpper,
-                leftLower, rightLower);
-        rightUpper = Node.createEmptyNode(level);
-        leftLower = Node.createEmptyNode(level);
-        rightLower = Node.createEmptyNode(level);
-
-        level++;
+    public Node relativeExpandUniverse() {
+        Node zero = handler.getZeroByLevel(level);
+        return Node.uniteAll(
+                this, zero,
+                zero, zero);
     }
 
-    public void setCell(int x, int y) {
+    /*
+     * не изменяет существующие ноды (они могут быть общими),
+     * копирует путь до клетки и возвращает новый нод
+     */
+    public Node setCell(int x, int y) {
         if (level == 0) {
-            alive = (short)1;
-            return;
+            Node leaf = new Node();
+            leaf.alive = 1;
+            return leaf;
+        }
+
+        int half = 1 << (level-1);
+        Node res = new Node(this);
+
+        if (y < half) {
+            if (x < half) { res.leftUpper = leftUpper.setCell(x, y); }
+            else          { res.rightUpper = rightUpper.setCell(x-half, y); }
         }
         else {
-            alive++;
+            if (x < half) { res.leftLower = leftLower.setCell(x, y-half); }
+            else          { res.rightLower = rightLower.setCell(x-half, y-half); }
         }
 
-        int sideNextSquare = (int) Math.pow(2, level-1);
-        Node nextNode = leftUpper;
-        int xOffset = 0;
-        int yOffset = 0;
-
-        if (x >= sideNextSquare) {
-            xOffset = sideNextSquare;
-            nextNode = rightUpper;
-            if (y >= sideNextSquare) {
-                yOffset = sideNextSquare;
-                nextNode = rightLower;
-            }
-        }
-        else {
-            if (y >= sideNextSquare) {
-                yOffset = sideNextSquare;
-                nextNode = leftLower;
-            }
-        }
-
-        nextNode.setCell(x-xOffset, y-yOffset);
+        res.alive = res.leftUpper.alive + res.rightUpper.alive +
+                    res.leftLower.alive + res.rightLower.alive;
+        return res;
     }
 
 

@@ -41,12 +41,8 @@ public abstract class NodeHandler implements IRule {
         if (level == 1) {
             return checkSimpleHash(Node.createEmptyNode((short) 1));
         }
-        return Node.uniteAll(
-                getSimpleZeroByLevel(level-1),
-                getSimpleZeroByLevel(level-1),
-                getSimpleZeroByLevel(level-1),
-                getSimpleZeroByLevel(level-1)
-        );
+        Node sub = getZeroByLevel(level-1);
+        return Node.uniteAll(sub, sub, sub, sub);
     }
 
     /*
@@ -172,7 +168,7 @@ public abstract class NodeHandler implements IRule {
             if (rule(currentThreadRI.counts[i], currentThreadRI.states[i]) > 0) {
                 int nx = i%2;
                 int ny = Math.floorDiv(i, 2);
-                res.setCell(nx, ny);
+                res = res.setCell(nx, ny);
             }
         }
         res = checkSimpleHash(res);

@@ -22,7 +22,6 @@ public class GameLifeHashEdition extends IGameLife {
         super(width, height, lifeRule);
         int max = Math.max(width, height);
         int level = (int) Math.ceil(Math.log(max)/Math.log(2));
-        root = Node.createEmptyNode((short) level);
 
         handler = new NodeHandler() {
             @Override
@@ -32,6 +31,8 @@ public class GameLifeHashEdition extends IGameLife {
         };
 
         Node.setHandler(handler);
+
+        root = handler.getZeroByLevel(level);
 
         iterator = new NodeIterator() {
             @Override
@@ -50,18 +51,16 @@ public class GameLifeHashEdition extends IGameLife {
         root = Node.hashAll(root);
 
 
-        shaduleRoot = Node.uniteAll(root.leftUpper, root.rightUpper,
-                                    root.leftLower, root.rightLower);
-        root.expandUniverse();
+        shaduleRoot = root;
+        root = root.expandUniverse();
     }
 
     @Override
     public void change() {
         handler.printCashSize();
 
-        shaduleRoot = Node.uniteAll(root.leftUpper, root.rightUpper,
-                                    root.leftLower, root.rightLower);
-        root.expandUniverse();
+        shaduleRoot = root;
+        root = root.expandUniverse();
     }
 
     @Override
@@ -81,10 +80,10 @@ public class GameLifeHashEdition extends IGameLife {
     @Override
     public void setCurrent(int x, int y) {
         int max = Math.max(x, y);
-        while (root.sideSize() < max) {
-            root.relativeExpandUniverse();
+        while (root.sideSize() <= max) {
+            root = root.relativeExpandUniverse();
         }
-        root.setCell(x, y);
+        root = root.setCell(x, y);
     }
 
 
