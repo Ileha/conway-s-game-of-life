@@ -1,21 +1,19 @@
 package app;
 
 import app.common.IGameLife;
-import app.common.Cell;
 import app.common.collection.GameLifeCollectionEdition;
 import app.common.hashlife.GameLifeHashEdition;
 import app.figure.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.concurrent.*;
-import javax.swing.JFrame;
 
 import app.figure.Exceptions.FigureException;
 import app.figure.RLE.RLEReader;
-import edu.princeton.cs.introcs.StdDraw;
 
 public class Main {
     static IGameLife data;
+    static GameWindow window;
     static double offsetX = 0;
     static double offsetY = 0;
 
@@ -36,38 +34,14 @@ public class Main {
     private static final double WHEEL_ZOOM_STEP = 1.2;  //масштаб за один щелчок колеса
     private static final double MAX_ZOOM_CELL_PIXELS = 50;//максимальный размер клетки на экране при приближении
 
-    /*
-    * колесо мыши обрабатывается в потоке Swing,
-    * поэтому прокрутка копится здесь и применяется в checkKeys()
-    */
-    private static final Object wheelLock = new Object();
-    private static double wheelRotation = 0;
-    private static int wheelPixelX = 0;
-    private static int wheelPixelY = 0;
+    private static final int BACKGROUND_COLOR = 0xFFFFFF;
+    private static final Font STATS_FONT = new Font("SansSerif", Font.PLAIN, 16);
+
+    private static final Point wheelPoint = new Point();
 
     private static void init() {
-        StdDraw.setCanvasSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        window = new GameWindow("Conway's game of life", CANVAS_WIDTH, CANVAS_HEIGHT);
         setScale(scaleX, scaleY);
-        StdDraw.enableDoubleBuffering();
-        initMouseWheel();
-    }
-
-    /*
-    * StdDraw не поддерживает колесо мыши, поэтому слушатель
-    * добавляется напрямую в его окно (координаты события в пикселях холста)
-    */
-    private static void initMouseWheel() {
-        for (Frame frame : Frame.getFrames()) {
-            if (frame instanceof JFrame && frame.isVisible()) {
-                ((JFrame) frame).getContentPane().addMouseWheelListener(e -> {
-                    synchronized (wheelLock) {
-                        wheelRotation += e.getPreciseWheelRotation();
-                        wheelPixelX = e.getX();
-                        wheelPixelY = e.getY();
-                    }
-                });
-            }
-        }
     }
 
     /*
@@ -96,30 +70,17 @@ public class Main {
         offsetX = (scaleX - width) / 2 - x;
         offsetY = (scaleY - height) / 2 - y;
     }
+    /*
+    * scaleX, scaleY - сколько клеток помещается на экране по ширине и высоте
+    */
     private static void setScale(double x, double y) {
-        StdDraw.setXscale(0, x);
-        StdDraw.setYscale(y, 0);
-
         scaleX = x;
         scaleY = y;
     }
 
     private static void draw() {
-        StdDraw.clear(Color.WHITE);
-
-        StdDraw.setPenColor(Color.black);
-
-        for (Cell e : data.getCurrent()) {
-            StdDraw.filledRectangle(e.getX()+offsetX, e.getY()+offsetY, 0.5, 0.5);
-        }
-    }
-
-    /*
-    * переводит пиксели экрана в единицы мира,
-    * чтобы статистика не зависела от масштаба
-    */
-    private static double pixelsToWorld(double pixels) {
-        return pixels * scaleX / CANVAS_WIDTH;
+        window.clear(BACKGROUND_COLOR);
+        data.render(window.getPixels(), CANVAS_WIDTH, CANVAS_HEIGHT, offsetX, offsetY, CANVAS_WIDTH / scaleX);
     }
 
     /*
@@ -129,37 +90,42 @@ public class Main {
         String time = String.format("frame: %.1fms", frameMs);
         String fps = String.format("fps: %.1f", 1000.0 / Math.max(frameMs, 0.001));
 
-        StdDraw.setPenColor(Color.WHITE);
-        StdDraw.filledRectangle(pixelsToWorld(90), pixelsToWorld(28), pixelsToWorld(85), pixelsToWorld(23));
+        Graphics2D g = window.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        StdDraw.setPenColor(Color.red);
-        StdDraw.textLeft(pixelsToWorld(10), pixelsToWorld(17), time);
-        StdDraw.textLeft(pixelsToWorld(10), pixelsToWorld(38), fps);
+        g.setColor(Color.WHITE);
+        g.fillRect(5, 5, 170, 46);
+
+        g.setColor(Color.red);
+        g.setFont(STATS_FONT);
+        g.drawString(time, 10, 23);
+        g.drawString(fps, 10, 44);
+        g.dispose();
     }
 
     public static void checkKeys() {
         //скорость в клетках, чтобы при любом масштабе экран двигался одинаково
         double move = deltaTime*MOVE_SPEED*scaleX/CANVAS_WIDTH;
 
-        if (StdDraw.isKeyPressed(KeyEvent.VK_UP)) {//up
+        if (window.isKeyPressed(KeyEvent.VK_UP)) {//up
             offsetY+=move;
         }
 
-        if (StdDraw.isKeyPressed(KeyEvent.VK_DOWN)) {//down
+        if (window.isKeyPressed(KeyEvent.VK_DOWN)) {//down
             offsetY-=move;
         }
 
-        if (StdDraw.isKeyPressed(KeyEvent.VK_LEFT)) {//left
+        if (window.isKeyPressed(KeyEvent.VK_LEFT)) {//left
             offsetX+=move;
         }
-        if (StdDraw.isKeyPressed(KeyEvent.VK_RIGHT)) {//right
+        if (window.isKeyPressed(KeyEvent.VK_RIGHT)) {//right
             offsetX-=move;
         }
 
 
         //все нажатия за кадр, иначе при низком fps они копятся в очереди
-        while (StdDraw.hasNextKeyTyped()) {
-            switch(StdDraw.nextKeyTyped()) {
+        for (Character key = window.nextKeyTyped(); key != null; key = window.nextKeyTyped()) {
+            switch(key) {
                 case '+':
                     zoomAt(1 / KEY_ZOOM_STEP, scaleX / 2, scaleY / 2);
                     break;
@@ -172,19 +138,11 @@ public class Main {
         }
 
         //колесо: вниз - отдалить, вверх - приблизить, относительно указателя мыши
-        double rotation;
-        int pixelX;
-        int pixelY;
-        synchronized (wheelLock) {
-            rotation = wheelRotation;
-            pixelX = wheelPixelX;
-            pixelY = wheelPixelY;
-            wheelRotation = 0;
-        }
+        double rotation = window.takeWheelRotation(wheelPoint);
         if (rotation != 0) {
             zoomAt(Math.pow(WHEEL_ZOOM_STEP, rotation),
-                   pixelX * scaleX / CANVAS_WIDTH,
-                   pixelY * scaleY / CANVAS_HEIGHT);
+                   wheelPoint.x * scaleX / CANVAS_WIDTH,
+                   wheelPoint.y * scaleY / CANVAS_HEIGHT);
         }
     }
 
@@ -235,7 +193,7 @@ public class Main {
         while (true) {
             /*
             * время считается от начала прошлого кадра до начала текущего,
-            * чтобы учитывался весь кадр вместе с StdDraw.show()
+            * чтобы учитывался весь кадр вместе с window.show()
             * nanoTime точнее currentTimeMillis (на Windows шаг ~15.6ms)
             */
             long frameStart = System.nanoTime();
@@ -257,7 +215,7 @@ public class Main {
             data.change();
 
             drawStats(frameMs);
-            StdDraw.show();
+            window.show();
         }
     }
 }
