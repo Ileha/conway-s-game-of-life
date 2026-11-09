@@ -1,0 +1,9 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "libs/stdlib-package.jar",
+        "libs/trove-3.0.3.jar",
+        "libs/commons-collections4-4.3.jar"
+    ]
+}
